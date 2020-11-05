@@ -69,14 +69,14 @@ for i in Sample_list:
     create_idx(final_Annotation_file).to_excel('{}'.format(output_path) + f"\\Indexed_{i}.xlsx", index=False)
 
 # create index on union file
-union_file = create_idx(union_file).to_excel('{}'.format(output_path) + "\Indexed_germline_union_of_variants_annotsv.xlsx", index=False)
+create_idx(union_file).to_excel('{}'.format(output_path) + "\\Indexed_germline_union_of_variants_annotsv.xlsx", index=False)
 
 # Generate PASSed and 3 filtered array by Idx
-U=pd.read_excel('{}'.format(output_path) + "\Indexed_germline_union_of_variants_annotsv.xlsx", index_col="Idx")[["SV chrom","SV start","SV end","SV length", "SV type", "Gene name" ,"location", "location2", "GD_ID", "GD_AF", "GD_POPMAX_AF","AnnotSV ranking","Variant_type"]]
+U=pd.read_excel('{}'.format(output_path) + "\\Indexed_germline_union_of_variants_annotsv.xlsx", index_col="Idx")[["SV chrom","SV start","SV end","SV length", "SV type", "Gene name" ,"location", "location2", "GD_ID", "GD_AF", "GD_POPMAX_AF","AnnotSV ranking","Variant_type"]]
 
 # Process union file
 for i in Sample_list:
-    S=pd.DataFrame('{}'.format(output_path) + f"\\Indexed_{i}.xlsx",index_col="Idx")
+    S=pd.read_excel('{}'.format(output_path) + f"\\Indexed_{i}.xlsx", index_col="Idx")
     
     #Filters (Add if needed)
     #filter1=(S['Func.refGene'].isin(["exonic","splicing","exonic;splicing"]))&(S['ExonicFunc.refGene'] != "synonymous SNV")
@@ -94,4 +94,4 @@ ary = ary.fillna(".")
 #print(ary.iloc[0,13:15])
 
 # export the result to output_path
-ary.to_excel('{}'.format(output_path) + "\germline_sv_VaraintBasedArray.xlsx")
+ary.to_excel('{}'.format(output_path) + "\\germline_sv_VaraintBasedArray.xlsx")
