@@ -5,12 +5,20 @@ Created on Thu Oct 29 00:47:22 2020
 @author: Jacob-Lab
 """
 import pandas as pd
-import numpy as np
-import collections as col
+import os as os
+
+# set the input/output path 
+input_path='D:\\Jacob-Lab\\github\\StructureVariant_recurrence_analysis\\inputs'
+output_path='D:\\Jacob-Lab\\github\\StructureVariant_recurrence_analysis\\outputs'
+
+# change the directory
+os.chdir('{}'.format(input_path))
 
 # family member AnnotSV file
-Sample_list = ["NTUH_Deafness_MDD0026_hg38_annotsv","NTUH_Deafness_MDD0027_hg38_annotsv"]
-ID_list = ["MDD0026", "MDD0027"]
+Sample_list = ["germline_test01","germline_test02"]
+union_file_name = 'germline_union_of_variants_annotsv.txt'
+union_file = pd.read_csv('{}'.format(union_file_name),sep="\t")
+
 # =============================================================================
 # 
 # # remove the full rows from raw data
@@ -20,31 +28,6 @@ ID_list = ["MDD0026", "MDD0027"]
 #     ary_split.to_csv(f"{i}_spilt.csv", sep = "\t" , index = False)
 # =============================================================================
 
-# generate info tags for N/T
-# FORMAT (there are four format...)
-# GT:SO:REPCN:REPCI:ADSP:ADFL:ADIR:LC
-# GT:FT:GQ:PL:PR
-# GT:FT:GQ:PL:PR:SR
-# GT:SM:CN:BC:PE
-
-N_info_tags = ['GT','SO','REPCN','REPCI','ADSP','ADFL','ADIR','LC']
-for i in range(8):
-    N_info_tags[i]+="_N"
-    
-# processing columns
-for i in ID_list:
-    file = pd.read_csv(f"NTUH_Deafness_{i}_hg38_annotsv.tsv", sep = "\t")
-    normal_info = file[i]
-    
-    n_list=[]
-    for j in range(len(normal_info)):
-        n = normal_info[j].split(":")
-        n_list.append(n)   
-         
-    df1=pd.DataFrame(n_list, columns=N_info_tags)
-    final_Annotation_file=pd.concat([file,df1],axis=1)
-    final_Annotation_file.to_excel(f"{i}.xlsx", index=False)
-    
 # create index
 def create_idx(df):
     idx_list=[]
@@ -59,18 +42,41 @@ def create_idx(df):
     finaldf=pd.concat([L,idx_df], axis=1)
     return finaldf
 
-for i in ID_list:
-    create_idx(pd.read_excel(f"{i}.xlsx")).to_excel(f"Indexed_{i}.xlsx", index=False)
+# generate info tags for N/T
+# FORMAT (there are four format...)
+# GT:SO:REPCN:REPCI:ADSP:ADFL:ADIR:LC
+# GT:FT:GQ:PL:PR
+# GT:FT:GQ:PL:PR:SR
+# GT:SM:CN:BC:PE
 
-# Process union file
-pd.read_csv("union_of_variants_annotsv.txt",sep="\t").to_excel("union_of_variants_annotsv.xlsx", index=False)
-create_idx(pd.read_excel("union_of_variants_annotsv.xlsx")).to_excel("Indexed_union_of_variants_annotsv.xlsx", index=False)
+N_info_tags = ['GT','SO','REPCN','REPCI','ADSP','ADFL','ADIR','LC']
+for i in range(8):
+    N_info_tags[i]+="_N"
+    
+# processing columns
+for i in Sample_list:
+    file = pd.read_csv(f"{i}.tsv", sep = "\t")
+    normal_info = file[i]
+    
+    n_list=[]
+    for j in range(len(normal_info)):
+        n = normal_info[j].split(":")
+        n_list.append(n)   
+         
+    df1=pd.DataFrame(n_list, columns=N_info_tags)
+    final_Annotation_file=pd.concat([file,df1],axis=1)    
+# create index on each annotation file
+    create_idx(final_Annotation_file).to_excel('{}'.format(output_path) + f"\\Indexed_{i}.xlsx", index=False)
+
+# create index on union file
+union_file = create_idx(union_file).to_excel('{}'.format(output_path) + "\Indexed_germline_union_of_variants_annotsv.xlsx", index=False)
 
 # Generate PASSed and 3 filtered array by Idx
-U=pd.read_excel("Indexed_union_of_variants_annotsv.xlsx", index_col="Idx")[["SV chrom","SV start","SV end","SV length", "SV type", "Gene name" ,"location", "location2", "GD_ID", "GD_AF", "GD_POPMAX_AF","AnnotSV ranking","Variant_type"]]
+U=pd.read_excel('{}'.format(output_path) + "\Indexed_germline_union_of_variants_annotsv.xlsx", index_col="Idx")[["SV chrom","SV start","SV end","SV length", "SV type", "Gene name" ,"location", "location2", "GD_ID", "GD_AF", "GD_POPMAX_AF","AnnotSV ranking","Variant_type"]]
 
-for i in ID_list:
-    S=pd.read_excel(f"Indexed_{i}.xlsx",index_col="Idx")
+# Process union file
+for i in Sample_list:
+    S=pd.DataFrame('{}'.format(output_path) + f"\\Indexed_{i}.xlsx",index_col="Idx")
     
     #Filters (Add if needed)
     #filter1=(S['Func.refGene'].isin(["exonic","splicing","exonic;splicing"]))&(S['ExonicFunc.refGene'] != "synonymous SNV")
@@ -82,5 +88,10 @@ for i in ID_list:
     U=ary
   
 ary["Counts"]=ary.iloc[:,13:15].count(axis=1)
-#print(ary.iloc[1,13:15])
-ary[(ary.Counts>0)].to_excel("VaraintBasedArray.xlsx")
+ary = ary.fillna(".")
+
+# check the count column
+#print(ary.iloc[0,13:15])
+
+# export the result to output_path
+ary.to_excel('{}'.format(output_path) + "\germline_sv_VaraintBasedArray.xlsx")
