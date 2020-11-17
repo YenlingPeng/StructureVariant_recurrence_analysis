@@ -89,9 +89,20 @@ for i in Sample_list:
   
 ary["Counts"]=ary.iloc[:,13:15].count(axis=1)
 ary = ary.fillna(".")
-
 # check the count column
 #print(ary.iloc[0,13:15])
+
+# add "chr" to SV chrom column
+ary["SV chrom"] = 'chr' + ary["SV chrom"].astype(str)
+
+# format SV type column 
+# <DEL> to DEL
+# <DUP> to DUP
+ary["SV type"] = ary["SV type"].str.replace("<DEL>","DEL").str.replace("<DUP>","DUP")
+
+# format AnnotSV ranking column
+replace_values = { 1 : "benign" , 2 : "likely-benign" , 3 : "VUS" , 4 : "likely-pathogenic", 5 : "pathogenic" }
+ary = ary.replace({"AnnotSV ranking":replace_values})
 
 # export the result to output_path
 ary.to_excel('{}'.format(output_path) + "\\germline_sv_VaraintBasedArray.xlsx")
